@@ -1,44 +1,99 @@
 # lau-construct
 
-**The Matrix Construct** — the shared creative space where user and agent co-create PLATO environments.
+The Matrix Construct — everything is a room, every room has controls.
 
-Like Neo and Trinity loading weapons, the user vibe-codes what they need (via voice or text) and the Construct materializes it as PLATO rooms, agent capabilities, hardware controls, and game mechanics.
+This is the shared creative space where user and agent co-create. The user describes what they want ("I need a training room with a warrior agent and gun-fu"), and the Construct materializes it as rooms, agents, hardware, and bridges — with an energy budget that enforces conservation.
 
-## Usage
+## The concept in 60 seconds
+
+A Construct starts as a **white room** — empty, infinite potential. You make requests in natural language, and the system parses them into typed intents (`NeedRooms`, `NeedAgents`, `LoadProgram`, etc.). Each request costs energy. You can render the result in four modes: Matrix (dashboard), MUD (text adventure), JSON (raw), or Voice (narrative only).
+
+The lifecycle: **Empty → Loading → Ready → Testing → Active**. You can modify, reset, and redeploy at any time. Energy is conserved — you can't spend more than the pool.
+
+## Quick start
 
 ```rust
-use lau_construct::{Construct, ConstructRequest};
+use lau_construct::*;
 
-// Create the Construct (white room)
-let mut c = Construct::new("The Construct", "neo", "operator", 500.0);
+// Start with a white room
+let mut construct = Construct::new("Mission Control", "alice", "operator", 500.0);
+assert_eq!(construct.state, ConstructState::Empty);
 
-// "I need guns, lots of guns"
-let results = c.manifest(&ConstructRequest::parse("load the combat training program"));
-assert!(results[0].success);
+// Materialize rooms
+let req = ConstructRequest::parse("I need rooms for engineering and training");
+let results = construct.manifest(&req);
+assert!(results.iter().all(|r| r.success));
+assert_eq!(construct.rooms.len(), 2);
 
-// Walk through
-let view = c.walk_through("Neo");
+// Load an agent
+let req = ConstructRequest::parse("I need a warrior agent");
+construct.manifest(&req);
 
-// Deploy
-let results = c.manifest(&ConstructRequest::parse("deploy"));
-assert!(results[0].success);
+// Teach it a skill
+let req = ConstructRequest::parse("I need gun-fu training");
+construct.manifest(&req);
+
+// Render it
+let view = construct.walk_through("Alice");
+println!("{}", view.render(ViewMode::Matrix));
+// ═══ The Construct ═══
+//   Rooms:
+//     ■ Engineering [loaded] ...
+//   Agents:
+//     ◆ Warrior [warrior] ...
+
+// Deploy it
+let req = ConstructRequest::parse("deploy");
+construct.manifest(&req);
+assert_eq!(construct.state, ConstructState::Active);
+assert!(construct.is_conserved());
 ```
 
-## Pre-built Programs
+## Key types
 
-- `load_combat_program()` — Training rooms, combat agents, skill programs
-- `load_engineering_program()` — Hardware control, motor agents, sensor arrays
-- `load_social_program()` — Palaver rooms, bridges, diplomacy agents
-- `load_exploration_program()` — Scout agents, mapping rooms, terrain generators
+| Type | What it does |
+|------|-------------|
+| `Construct` | The shared space: rooms, agents, hardware, bridges, energy |
+| `ConstructRequest` | Natural language request, parsed into typed intents |
+| `ConstructRoom` | A room with type, size, contents, energy level |
+| `ConstructAgent` | An agent with archetype, skills, equipment, level |
+| `ConstructHardware` | Connected device: servo, sensor, camera, etc. |
+| `ConstructBridge` | Connection to another instance |
+| `ConstructView` | Rendered perspective of the construct |
 
-## Concepts
+## Pre-built programs
 
-- **Construct** — The shared white room that fills with whatever you need
-- **Manifest** — Materialize what the user asked for
-- **Dematerialize** — Remove something from the Construct
-- **Walk Through** — See what was built from a perspective
-- **Deploy** — Take it live
+Load a complete Construct in one call:
 
-## License
+```rust
+// "I know gun-fu" — combat training
+let combat = load_combat_program();  // Dojo + Arsenal + Arena, Neo & Trinity
 
-MIT
+// Engineering bay — hardware control
+let eng = load_engineering_program(); // Lab + Motor Bay + Sensor Array
+
+// Social — palaver rooms and diplomacy
+let social = load_social_program();   // Palaver Room + Bridge Room
+
+// Exploration — scouting and mapping
+let explore = load_exploration_program(); // Cartography + Scout Den
+```
+
+Or load via manifest:
+
+```rust
+construct.manifest(&ConstructRequest::parse("load the combat program"));
+```
+
+## Render modes
+
+```rust
+let text = construct.render(ConstructRenderMode::Matrix);    // Dashboard
+let mud  = construct.render(ConstructRenderMode::MUD);       // "You are Alice..."
+let json = construct.render(ConstructRenderMode::JSON);       // Raw serde
+let voice = construct.render(ConstructRenderMode::Voice);     // Narrative only
+```
+
+## Contributing
+
+PRs welcome. This crate is part of the [SuperInstance](https://github.com/SuperInstance) ecosystem. The Construct is the heart of the PLATO system — contributions to room types, agent archetypes, and hardware models are especially welcome.
